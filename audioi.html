@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaHub - Subir Video y Música</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --accent: #22c55e; /* Color verde para el botón de proyectar */
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 { text-align: center; color: var(--primary); }
+
+        .upload-section {
+            background: var(--card);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px dashed var(--primary);
+            text-align: center;
+            margin-bottom: 30px;
+            transition: transform 0.2s;
+        }
+
+        .upload-section:hover {
+            transform: scale(1.01);
+            background: #243147;
+        }
+
+        #fileInput { display: none; }
+
+        .btn-upload {
+            background: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .media-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .media-item {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .media-item h3 {
+            font-size: 1rem;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        video, audio {
+            width: 100%;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        /* Estilo del botón de proyectar */
+        .btn-project {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-project:hover {
+            opacity: 0.9;
+        }
+
+        .empty-msg {
+            text-align: center;
+            grid-column: 1 / -1;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>MediaHub</h1>
+    
+    <div class="upload-section" id="dropZone">
+        <p>Arrastra tus archivos de video o música aquí</p>
+        <p>o</p>
+        <label for="fileInput" class="btn-upload">Seleccionar Archivos</label>
+        <input type="file" id="fileInput" accept="video/*,audio/*" multiple>
+    </div>
+
+    <div class="media-gallery" id="gallery">
+        <p class="empty-msg">No hay archivos subidos aún.</p>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const gallery = document.getElementById('gallery');
+
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#fff';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'var(--primary)';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--primary)';
+        handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            if (document.querySelector('.empty-msg')) {
+                gallery.innerHTML = '';
+            }
+
+            Array.from(files).forEach(file => {
+                const fileURL = URL.createObjectURL(file);
+                createMediaElement(file, fileURL);
+            });
+        }
+    }
+
+    function createMediaElement(file, url) {
+        const div = document.createElement('div');
+        div.className = 'media-item';
+
+        const title = document.createElement('h3');
+        title.textContent = file.name;
+        div.appendChild(title);
+
+        let mediaElement;
+
+        if (file.type.startsWith('video/')) {
+            mediaElement = document.createElement('video');
+            mediaElement.src = url;
+            mediaElement.controls = true;
+            div.appendChild(mediaElement);
+        } else if (file.type.startsWith('audio/')) {
+            mediaElement = document.createElement('audio');
+            mediaElement.src = url;
+            mediaElement.controls = true;
+            div.appendChild(mediaElement);
+        }
+
+        // Crear botón de proyectar
+        const projectBtn = document.createElement('button');
+        projectBtn.className = 'btn-project';
+        projectBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h20v14H2zM8 21h8M12 17v4"></path>
+            </svg>
+            Proyectar en DataShow
+        `;
+
+        // Acción de proyectar (Pantalla completa)
+        projectBtn.onclick = () => {
+            if (mediaElement.requestFullscreen) {
+                mediaElement.requestFullscreen();
+            } else if (mediaElement.webkitRequestFullscreen) { /* Safari */
+                mediaElement.webkitRequestFullscreen();
+            }
+            mediaElement.play(); // Empieza la reproducción automáticamente
+        };
+
+        div.appendChild(projectBtn);
+        gallery.prepend(div);
+    }
+</script>
+
+</body>
+</html>
